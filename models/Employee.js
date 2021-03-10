@@ -17,6 +17,9 @@ class Employee extends Model {
             hard_salary: DataTypes.FLOAT,
             createdAt: DataTypes.DATE,
             updatedAt: DataTypes.DATE,
+            login_failed_count: DataTypes.INTEGER,
+            captcha: DataTypes.INTEGER,
+            is_captcha_available: DataTypes.BOOLEAN
         }, {
             sequelize,
             freezeTableName: true

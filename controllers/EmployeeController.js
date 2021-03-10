@@ -25,30 +25,56 @@ module.exports = {
     },
 
     async signIn(req, res) {
-        const { email, password } = req.body
+        let { email, password, captcha } = req.body
+        captcha = parseInt(captcha)
         const employee = await Employee.findOne({
             where: {
                 email: email
             }
         })
+        let isInvalidAccount = false;
+        let loginFailCause = ""
         if (!employee) {
-            res.status(400).json({
+            isInvalidAccount = true
+            loginFailCause = "Email does not exist"
+            return res.status(400).json({
                 success: false,
-                message: "Email does not exist"
+                message: loginFailCause,
+                login_failed_count: 0,
+                captcha: 0
             })
         }
         const validPassword = await bcrypt.compare(password, employee.password);
-        if (validPassword) {
-            const token = jwt.sign({ ...employee }, process.env.PRIVATE_KEY, { expiresIn: '1h' });
-            return res.status(200).json({
-                success: true,
-                user: employee,
-                token: token
+        if (!validPassword) {
+            isInvalidAccount = true
+            loginFailCause = "Invalid password"
+        }
+        if (employee.login_failed_count >= 5) {
+            if (captcha !== employee.captcha) {
+                isInvalidAccount = true
+                loginFailCause = "Invalid captcha"
+            }
+        }
+        if (isInvalidAccount) {
+            employee.login_failed_count++
+            if (employee.login_failed_count >= 5) {
+                employee.captcha = Math.floor(1000 + Math.random() * 9000);
+            }
+            await employee.save()
+            return res.status(400).json({
+                success: false,
+                message: loginFailCause,
+                login_failed_count: employee.login_failed_count,
+                captcha: employee.captcha
             })
         }
-        res.status(400).json({
-            success: false,
-            message: "Invalid password"
+        const token = jwt.sign({ ...employee }, process.env.PRIVATE_KEY, { expiresIn: '1h' });
+        employee.login_failed_count = 0
+        await employee.save()
+        return res.status(200).json({
+            success: true,
+            user: employee,
+            token: token
         })
     },
 
