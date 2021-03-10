@@ -3,6 +3,8 @@ const EmployeeController = require('../controllers/EmployeeController')
 
 router.get('/', EmployeeController.index)
 
+router.get('/singleEmployee', EmployeeController.getSingleEmployeeDataByToken)
+
 router.post('/', EmployeeController.store)
 
 router.put('/:employeeId', EmployeeController.update)

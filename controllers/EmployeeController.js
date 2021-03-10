@@ -78,6 +78,23 @@ module.exports = {
         })
     },
 
+    async getSingleEmployeeDataByToken(req, res) {
+        const { authorization } = req.headers
+        if (!authorization) {
+            return res.status(200).json({
+                auth: false,
+            })
+        }
+        const token = authorization.split(' ')[1];
+        const decoded = jwt.verify(token, process.env.PRIVATE_KEY)
+        const employeeId = decoded.dataValues.id
+        const employee = await Employee.findByPk(employeeId)
+        return res.status(200).json({
+            success: true,
+            user: employee,
+        })
+    },
+
     async store(req, res) {
         try {
             console.log(req.body)
